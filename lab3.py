@@ -50,7 +50,8 @@ def get_inverted(matrix_b, vector_x, position):
     return matrix_b_new.dot(matrix_b)
 
 
-def main_stage_simplex_method(m, n, matrix_a, vector_b, vector_c, vector_x, vector_jb):
+def main_stage_simplex_method(m, n, matrix_a, vector_b, vector_c, vector_x,
+                              vector_jb):
     """main stage simplex
 
     Args:
@@ -73,7 +74,8 @@ def main_stage_simplex_method(m, n, matrix_a, vector_b, vector_c, vector_x, vect
     while True:
         vector_jb_n = [i for i in range(n) if i not in vector_jb]
 
-        delta = vector_c[vector_jb].dot(matrix_b).dot(matrix_a[:, vector_jb_n]) - vector_c[vector_jb_n]
+        delta = vector_c[vector_jb].dot(matrix_b).dot(
+            matrix_a[:, vector_jb_n]) - vector_c[vector_jb_n]
 
         checker = -1
         for i, el in enumerate(delta):
@@ -89,7 +91,8 @@ def main_stage_simplex_method(m, n, matrix_a, vector_b, vector_c, vector_x, vect
         if all([i <= 0 for i in vector_z]):
             return None
 
-        theta = [vector_x[vector_jb[i]] / vector_z[i] if vector_z[i] > 0 else math.inf for i in range(m)]
+        theta = [vector_x[vector_jb[i]] / vector_z[i]
+                 if vector_z[i] > 0 else math.inf for i in range(m)]
 
         theta_0 = min(theta)
         s = theta.index(theta_0)
@@ -184,7 +187,7 @@ def simplex():
         m, n = map(int, input().split())
         matrix_a = input_matrix(m)
         vector_b, vector_c = input_vector(), input_vector()
-              
+
     vector_x = first_step_simplex_method(matrix_a, vector_b, m, n)
 
     if vector_x is None:
