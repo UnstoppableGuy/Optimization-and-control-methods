@@ -1,5 +1,69 @@
 import math
 import sys
+import json
+import random
+
+
+def write_json(a, b, c, result='Error', path='data5.json'):
+    try:
+        with open(path, 'r') as rf:
+            data = json.load(rf)
+    except Exception:
+        data = {}
+        data['tests'] = []
+    finally:
+        data['tests'].append({
+            'a': a,
+            'b': b,
+            'c': c,
+            'result': result
+        })
+    with open('path', 'w') as outfile:
+        json.dump(data, outfile)
+
+
+def read_json():
+    try:
+        with open('data5.json', 'r') as rf:
+            data = json.load(rf)
+    except FileNotFoundError:
+        raise FileNotFoundError('not sush file in directory')
+    return data
+
+
+def print_matrix(matrix):
+    print('\n'.join([' '.join(list(map(str, map(int, i)))) for i in matrix]))
+
+
+def generate_random_data_set(max_value, rows=0, colums=0):
+    """Generate random dataset for tranport matrix task
+
+    Args:
+        max_value (int): sum for vectors
+        rows (int, optional): count of rows in matrix. Defaults to 0.
+        colums (int, optional): count of colums in matrix. Defaults to 0.
+    """
+    if rows < 2:
+        rows = random.randint(2, 10)
+
+    if colums < 2:
+        colums = random.randint(2, 10)
+
+    C = list([[random.randint(0, 10) for j in range(colums)]
+              for i in range(rows)])
+
+    a = [random.randint(0, int(max_value/rows)) for _ in range(rows - 1)]
+    b = [random.randint(0, int(max_value/colums)) for _ in range(colums - 1)]
+    last_a, last_b = max_value - sum(a), max_value - sum(b)
+    a.insert(random.randint(0, len(a)), last_a)
+    b.insert(random.randint(0, len(b)), last_b)
+    # print(rows, colums, sep='\n')
+    print(C, a, b, sep='\n')
+    result, path = matrix_transport_task(rows, colums, C, a, b)
+    if type(path) == str:
+        write_json(a=a, b=b, c=C, result=result, path=path)
+    # write_json(a=a, b=b, c=C, result=result)
+    return result
 
 
 def test1():
@@ -46,7 +110,6 @@ def test3():
          [19, 3, 2, 7, 3, 7, 8, 15],
          [1, 4, -7, -3, 9, 13, 17, 22]]
 
-    # x, J = solve_mtp(a, b, c)
     return matrix_transport_task(4, 8, c, a, b)
 
 
@@ -63,7 +126,6 @@ def test4():
          [-15, 1, 0, 0, 13, 5, 4, 5],
          [1, -5, 9, -3, -4, 7, 16, 25]]
 
-    # x, J = solve_mtp(a, b, c)
     return matrix_transport_task(4, 8, c, a, b)
 
 
@@ -176,35 +238,78 @@ def min_cost_flow(N, edges, K, s, t, n, m):
 
 
 def matrix_transport_task(m, n, matrix_c, vector_a, vector_b):
+    """_summary_
+
+    Args:
+        m (int): count of  rows
+        n (int): count of colums
+        matrix_c (lists in list): traffic matrix
+        vector_a (list): supply vector
+        vector_b (list): demand vector
+
+    Returns:
+        list: matrix X values
+    """
     s = 0
     t = m + n + 1
     sum_a = sum(vector_a)
     sum_b = sum(vector_b)
+    if sum_a != sum_b:
+        print('sums not equal')
     edges = []
+    [[edges.append([i + 1, m + j + 1, math.inf, matrix_c[i][j]])
+      for j in range(n)] for i in range(m)]
+    [edges.append([0, i + 1, vector_a[i], 0]) for i in range(m)]
+    [edges.append([m + i + 1, n + m + 1, vector_b[i], 0]) for i in range(n)]
+    route = min_cost_flow(n + m + 2, edges, min(sum_a, sum_b), s, t, n, m)
+    # print(('\n'.join(str(x) for x in edges)
+    #        ).replace('[', '').replace(']', ''))
 
+    # return '\n'.join([' '.join(list(map(str, map(int, i)))) for i in route])
+    count = 0
     for i in range(m):
         for j in range(n):
-            edges.append([i + 1, m + j + 1, math.inf, matrix_c[i][j]])
+            if route[i][j] > 0:
+                count += 1
 
-    for i in range(m):
-        edges.append([0, i + 1, vector_a[i], 0])
-
-    for i in range(n):
-        edges.append([m + i + 1, n + m + 1, vector_b[i], 0])
-
-    route = min_cost_flow(n + m + 2, edges, min(sum_a, sum_b), s, t, n, m)
-    print(('\n'.join(str(x) for x in edges)
-           ).replace('[', '').replace(']', ''))
-    print(route)
-    return '\n'.join([' '.join(list(map(str, map(int, i)))) for i in route])
+    if count == m+n-1:
+        print('Count: {}\n'.format(count))
+    else:
+        print('Count:{}\n Sum:{}\n'.format(count, m+n-1))
+        return route, 'error.json'
+        # raise Exception('Count and sum not equal')
+    return route
 
 
 if __name__ == '__main__':
     if 'test' in sys.argv:
-        print(test1())
-        # print(test2())
-        # print(test3())
-        # print(test4())
-        # print(test5())
+        print(test1(), end='\n\n')
+        print(test2(), end='\n\n')
+        print(test3(), end='\n\n')
+        print(test4(), end='\n\n')
+        print(test5(), end='\n\n')
+    elif 'json' in sys.argv:
+        data = read_json()
+        for x in data['tests']:
+            a = x['a']
+            b = x['b']
+            c = x['c']
+            res = matrix_transport_task(len(a), len(b), c, a, b)
+            from numpy import array_equal
+            if not array_equal(x['result'], res):
+                print('RESULTT NOT EQUAL')
+    elif 'random' in sys.argv:
+        try:
+            max_value, row, col = map(int, input().split(' '))
+        except Exception:
+            max_value = 500
+            row = 5
+            col = 5
+        finally:
+            print_matrix(generate_random_data_set(max_value, row, col))
+        # generate_random_data_set(500, 5, 6)
     else:
-        print(matrix_transport_task())
+        m, n = map(int, input().split(' '))
+        matrix_c = input_matrix(m)
+        vector_a = input_vector()
+        vector_b = input_vector()
